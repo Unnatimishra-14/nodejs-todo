@@ -11,9 +11,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v2
     - name: Use Node.js
-      uses: actions/setup-node@v4
+      uses: actions/setup-node@v2
       with:
         node-version: '20.x'
     - run: npm ci
@@ -21,29 +21,18 @@ jobs:
 
     - name: Set up OpenTelemetry
       run: |
-        npm install @opentelemetry/api @opentelemetry/sdk-node @opentelemetry/auto-instrumentations-node @opentelemetry/exporter-trace-otlp-http
-        echo "require('./tracing');" | cat - index.js > temp && mv temp index.js
+        npm install @opentelemetry/api @opentelemetry/sdk-trace-node @opentelemetry/instrumentation @opentelemetry/instrumentation-http @opentelemetry/exporter-trace-otlp-http
+        node otel-setup.js
 
-    - name: Build and push Docker image
-      env:
-        DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
-        DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
-      run: |
-        docker build -t unnatimishra14/todo-app:${{ github.sha }} .
-        echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin
-        docker push unnatimishra14/todo-app:${{ github.sha }}
-
-    - name: Deploy with Docker Compose
-      run: |
-        docker-compose up -d
-        sleep 30  # Wait for services to start
+    - name: Run integration tests
+      run: npm run integration-test
 
     - name: Collect and analyze traces
       run: |
-        curl -X GET http://localhost:16686/api/traces?service=todo-app
+        curl -X GET http://localhost:16686/api/traces?service=github-actions-ci
         
 
     - name: Collect and analyze metrics
       run: |
         curl -X GET http://localhost:9090/api/v1/query?query=nodejs_http_requests_total
-        
+       

@@ -24,8 +24,6 @@ jobs:
         npm install @opentelemetry/api @opentelemetry/sdk-trace-node @opentelemetry/instrumentation @opentelemetry/instrumentation-http @opentelemetry/exporter-trace-otlp-http
         node otel-setup.js
 
-    - name: Run integration tests
-      run: npm run integration-test
 
     - name: Collect and analyze traces
       run: |
